@@ -1,5 +1,5 @@
 package:
-  name: auselesspackage
+  name: mypackage
   version: 0.1
 
 source:
