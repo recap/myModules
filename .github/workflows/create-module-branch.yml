@@ -11,6 +11,8 @@ jobs:
   create_and_reset:
     if: github.event.pull_request.merged == true && github.event.pull_request.head.repo.fork == true
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
