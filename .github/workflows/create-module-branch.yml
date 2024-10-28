@@ -25,7 +25,9 @@ jobs:
         id: read_meta
         run: |
           # Extract the branch name from package.name in meta.yaml and add the prefix
-          BRANCH_NAME="module/$(yq '.package.name' meta.yaml)"
+          PACKAGE_NAME=$(yq '.package.name' meta.yaml)
+          # Remove quotes if present
+          BRANCH_NAME="module/$(echo $PACKAGE_NAME | sed 's/^"//;s/"$//')"
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Get the latest commit hash (Merge Commit)
