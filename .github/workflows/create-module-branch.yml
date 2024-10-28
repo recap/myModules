@@ -1,0 +1,55 @@
+name: Create New Branch and Reset Main on Forked PR Merge
+
+on:
+  pull_request:
+    types:
+      - closed # Trigger when a PR is closed (including merged)
+    branches:
+      - main # Only monitor merges into main
+
+jobs:
+  create_and_reset:
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.repo.fork == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetch full history to enable reset
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Install yq
+        run: sudo apt-get update && sudo apt-get install -y yq
+
+      - name: Read branch name from meta.yaml and add prefix
+        id: read_meta
+        run: |
+          # Extract the branch name from package.name in meta.yaml and add the prefix
+          BRANCH_NAME="module/$(yq '.package.name' meta.yaml)"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: Get the latest commit hash (Merge Commit)
+        id: get_merge_commit
+        run: echo "MERGE_COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      - name: Create a new branch with the merge commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          MERGE_COMMIT_SHA: ${{ env.MERGE_COMMIT_SHA }}
+        run: |
+          # Create a new branch with the prefixed branch name from package.name in meta.yaml
+          git branch "$BRANCH_NAME" "$MERGE_COMMIT_SHA"
+
+          # Push the new branch to the repository
+          git push origin "$BRANCH_NAME"
+
+      - name: Reset main branch to previous commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Move main back one commit to remove the merge
+          git reset --hard HEAD~1
+
+          # Push the reset to main, forcing the update
+          git push origin main --force

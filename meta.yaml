@@ -1,0 +1,7 @@
+package:
+  name: mypackage
+  version: 0.1
+
+source:
+  url: "https://.."
+  sha256: 000000
