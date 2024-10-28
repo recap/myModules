@@ -20,16 +20,17 @@ jobs:
           fetch-depth: 0 # Fetch full history to enable reset
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Install yq
-        run: sudo apt-get update && sudo apt-get install -y yq
+      - name: Set remote URL with GITHUB_TOKEN
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/jasp-escience/modules.git"
 
       - name: Read branch name from meta.yaml and add prefix
         id: read_meta
         run: |
-          # Extract the branch name from package.name in meta.yaml and add the prefix
-          PACKAGE_NAME=$(yq '.package.name' meta.yaml)
-          # Remove quotes if present
-          BRANCH_NAME="module/$(echo $PACKAGE_NAME | sed 's/^"//;s/"$//')"
+          RAW_BRANCH_NAME=$(yq '.package.name' meta.yaml)
+          BRANCH_NAME="module/$(echo $RAW_BRANCH_NAME | sed 's/^"//;s/"$//')"
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Get the latest commit hash (Merge Commit)
@@ -38,22 +39,15 @@ jobs:
 
       - name: Create a new branch with the merge commit
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH_NAME: ${{ env.BRANCH_NAME }}
           MERGE_COMMIT_SHA: ${{ env.MERGE_COMMIT_SHA }}
         run: |
-          # Create a new branch with the prefixed branch name from package.name in meta.yaml
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git branch "$BRANCH_NAME" "$MERGE_COMMIT_SHA"
-
-          # Push the new branch to the repository
           git push origin "$BRANCH_NAME"
 
       - name: Reset main branch to previous commit
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Move main back one commit to remove the merge
           git reset --hard HEAD~1
-
-          # Push the reset to main, forcing the update
           git push origin main --force
