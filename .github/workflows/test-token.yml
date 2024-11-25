@@ -1,4 +1,4 @@
-iname: Test GITHUB_TOKEN for Read and Write Permissions
+name: Test GITHUB_TOKEN for Read and Write Permissions
 
 on:
   workflow_dispatch: # Manual trigger for testing
