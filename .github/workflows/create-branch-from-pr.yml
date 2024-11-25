@@ -24,7 +24,8 @@ jobs:
           # git checkout $BASE_BRANCH
           git checkout main
           git checkout -b $BRANCH_NAME
-          git push origin $BRANCH_NAME
+          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} $BRANCH_NAME
+          # git push origin $BRANCH_NAME
 
       - name: Comment on Pull Request
         env:
