@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create New Branch from PR
         env:
@@ -20,7 +20,9 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git checkout $BASE_BRANCH
+          git fetch
+          # git checkout $BASE_BRANCH
+          git checkout main
           git checkout -b $BRANCH_NAME
           git push origin $BRANCH_NAME
 
