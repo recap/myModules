@@ -20,6 +20,7 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git fetch
           # git checkout $BASE_BRANCH
           git checkout main
           git checkout -b $BRANCH_NAME
