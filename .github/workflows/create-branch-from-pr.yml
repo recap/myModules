@@ -3,36 +3,35 @@ name: Create Branch from Pull Request
 on:
   pull_request:
     types:
-      - opened # Trigger when a pull request is opened
+      - opened
+      - synchronize
 
 jobs:
-  create_branch_from_pr:
+  test_github_token:
     runs-on: ubuntu-latest
-    permissions: write-all
+
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Create New Branch from PR
-        env:
-          BRANCH_NAME: "branch-from-pr-${{ github.event.pull_request.number }}"
-          BASE_BRANCH: ${{ github.event.pull_request.head.ref }}
+      - name: Fetch Pull Request Head SHA and Branch Name
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git fetch
-          # git checkout $BASE_BRANCH
-          git checkout main
-          git checkout -b $BRANCH_NAME
-          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} $BRANCH_NAME
-          # git push origin $BRANCH_NAME
+          PR_BRANCH="${{ github.event.pull_request.head.ref }}"
+          PR_SHA="${{ github.event.pull_request.head.sha }}"
+          echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
+          echo "PR_SHA=$PR_SHA" >> $GITHUB_ENV
 
-      - name: Comment on Pull Request
-        env:
-          BRANCH_NAME: "branch-from-pr-${{ github.event.pull_request.number }}"
+      - name: Create New Branch for PR
         run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"body\":\"New branch created: $BRANCH_NAME\"}" \
-            "${{ github.event.pull_request.comments_url }}"
+          TEST_BRANCH="test-branch-for-pr-${{ github.event.pull_request.number }}"
+          RESPONSE=$(curl -X POST \
+                           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                           -H "Accept: application/vnd.github.v3+json" \
+                           -d "{\"ref\":\"refs/heads/$TEST_BRANCH\",\"sha\":\"${PR_SHA}\"}" \
+                           -o response.json -w "%{http_code}" \
+                           -s https://api.github.com/repos/${{ github.repository }}/git/refs)
+          if [ "$RESPONSE" -eq 201 ]; then
+            echo "Branch $TEST_BRANCH created successfully."
+            echo "TEST_BRANCH=$TEST_BRANCH" >> $GITHUB_ENV
+          else
+            echo "Failed to create branch: Received HTTP $RESPONSE"
+            cat response.json
+            exit 1
+          fi
