@@ -28,7 +28,7 @@ jobs:
 
       - name: Extract Package Name from meta.yaml
         run: |
-          PACKAGE_NAME=$(yq '.package.name' meta.yaml)
+          PACKAGE_NAME=$(yq -r '.package.name' meta.yaml)
           echo "Package name: $PACKAGE_NAME"
           echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
         shell: bash
