@@ -9,6 +9,7 @@ on:
 jobs:
   test_github_token:
     runs-on: ubuntu-latest
+    permissions: write-all
 
     steps:
       - name: Fetch Pull Request Head SHA and Branch Name
