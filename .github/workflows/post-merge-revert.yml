@@ -35,8 +35,7 @@ jobs:
 
       - name: Create Branch with Merge Sources
         run: |
-          # MERGED_BRANCH="module/pr-${{ github.event.pull_request.number }}"
-          MERGED_BRANCH="module/${{ env.PACKAGE_NAME }}
+          MERGED_BRANCH="module/${{ env.PACKAGE_NAME }}"
           git checkout -b $MERGED_BRANCH
           echo "Branch created: $MERGED_BRANCH"
           git push --set-upstream origin $MERGED_BRANCH
@@ -56,8 +55,7 @@ jobs:
 
       - name: Comment on Pull Request
         run: |
-          # MERGED_BRANCH="module/pr-${{ github.event.pull_request.number }}"
-          MERGED_BRANCH="module/${{ env.PACKAGE_NAME }}
+          MERGED_BRANCH="module/${{ env.PACKAGE_NAME }}"
           COMMENT="The pull request was merged. A new branch \`$MERGED_BRANCH\` has been created with the merge changes. The main branch has been reverted to before the merge."
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
