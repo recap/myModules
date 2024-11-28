@@ -1,6 +1,6 @@
 package:
-  name: auselesspackageseven
-  version: 0.4.2
+  name: firstmodule
+  version: 0.1.0
 
 source:
   url: "https://.."
