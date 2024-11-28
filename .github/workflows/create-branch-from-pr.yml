@@ -33,7 +33,6 @@ jobs:
       - name: Push the New Branch
         run: |
           git push --set-upstream origin $PR_BRANCH
-          git push origin $PR_BRANCH
 
       - name: Display Branch Details
         run: |
