@@ -1,7 +1,7 @@
 name: Post-Merge Branch and Revert Main
 
 on:
-  pull_request:
+  pull_request_target:
     types:
       - closed # Trigger when a pull request is closed (merged or not)
 
