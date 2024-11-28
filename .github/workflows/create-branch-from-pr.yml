@@ -32,6 +32,7 @@ jobs:
 
       - name: Push the New Branch
         run: |
+          PR_BRANCH="pr-${{ github.event.pull_request.number }}-with-main"
           git push --set-upstream origin $PR_BRANCH
 
       - name: Display Branch Details
