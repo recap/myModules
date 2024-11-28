@@ -1,38 +1,41 @@
-name: Create Branch from Pull Request
+name: Create Branch from PR
 
 on:
   pull_request:
     types:
       - opened
       - synchronize
+      - reopened
 
 jobs:
-  test_github_token:
+  sync_pr_with_main:
     runs-on: ubuntu-latest
-    permissions: write-all
 
     steps:
-      - name: Fetch Pull Request Head SHA and Branch Name
-        run: |
-          PR_BRANCH="${{ github.event.pull_request.head.ref }}"
-          PR_SHA="${{ github.event.pull_request.head.sha }}"
-          echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
-          echo "PR_SHA=$PR_SHA" >> $GITHUB_ENV
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Ensure all branches and commit history are fetched
 
-      - name: Create New Branch for PR
+      - name: Pull Latest Main Branch
         run: |
-          TEST_BRANCH="test-branch-for-pr-${{ github.event.pull_request.number }}"
-          RESPONSE=$(curl -X POST \
-                           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                           -H "Accept: application/vnd.github.v3+json" \
-                           -d "{\"ref\":\"refs/heads/$TEST_BRANCH\",\"sha\":\"${PR_SHA}\"}" \
-                           -o response.json -w "%{http_code}" \
-                           -s https://api.github.com/repos/${{ github.repository }}/git/refs)
-          if [ "$RESPONSE" -eq 201 ]; then
-            echo "Branch $TEST_BRANCH created successfully."
-            echo "TEST_BRANCH=$TEST_BRANCH" >> $GITHUB_ENV
-          else
-            echo "Failed to create branch: Received HTTP $RESPONSE"
-            cat response.json
-            exit 1
-          fi
+          git fetch origin main
+          git checkout main
+          git pull origin main
+
+      - name: Create Branch with PR Sources
+        run: |
+          PR_BRANCH="pr-${{ github.event.pull_request.number }}-with-main"
+          git checkout -b $PR_BRANCH
+          git pull origin ${{ github.event.pull_request.head.ref }}
+          git log --oneline -5
+
+      - name: Push the New Branch
+        run: |
+          git push origin $PR_BRANCH
+
+      - name: Display Branch Details
+        run: |
+          echo "Created branch: pr-${{ github.event.pull_request.number }}-with-main"
+          git branch
+          echo "Merged commits from PR: ${{ github.event.pull_request.head.ref }}"
