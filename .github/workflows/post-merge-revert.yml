@@ -1,0 +1,52 @@
+name: Post-Merge Branch and Revert Main
+
+on:
+  pull_request:
+    types:
+      - closed # Trigger when a pull request is closed (merged or not)
+
+jobs:
+  post_merge_revert:
+    if: ${{ github.event.pull_request.merged == true }} # Only run if the PR was merged
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all branches and commit history
+
+      - name: Fetch Main Branch
+        run: |
+          git fetch origin main
+          git checkout main
+
+      - name: Create Branch with Merge Sources
+        run: |
+          MERGED_BRANCH="merged-pr-${{ github.event.pull_request.number }}"
+          git checkout -b $MERGED_BRANCH
+          echo "Branch created: $MERGED_BRANCH"
+          git push --set-upstream origin $MERGED_BRANCH
+
+      - name: Revert Main to Before Merge
+        run: |
+          MERGE_COMMIT=$(git rev-parse HEAD)
+          PRE_MERGE_COMMIT=$(git rev-parse HEAD^1)
+          echo "Merge commit: $MERGE_COMMIT"
+          echo "Pre-merge commit: $PRE_MERGE_COMMIT"
+          git checkout main
+          git reset --hard $PRE_MERGE_COMMIT
+
+      - name: Push Reverted Main Branch
+        run: |
+          git push --force-with-lease origin main
+
+      - name: Comment on Pull Request
+        run: |
+          MERGED_BRANCH="merged-pr-${{ github.event.pull_request.number }}"
+          COMMENT="The pull request was merged. A new branch \`$MERGED_BRANCH\` has been created with the merge changes. The main branch has been reverted to before the merge."
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"body\": \"$COMMENT\"}" \
+            "${{ github.event.pull_request.comments_url }}"
