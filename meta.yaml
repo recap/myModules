@@ -1,6 +1,6 @@
 package:
   name: auselesspackageseven
-  version: 0.1
+  version: 0.3.4
 
 source:
   url: "https://.."
