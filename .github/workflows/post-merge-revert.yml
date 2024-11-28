@@ -8,9 +8,14 @@ on:
 jobs:
   post_merge_revert:
     if: ${{ github.event.pull_request.merged == true }} # Only run if the PR was merged
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
+      - name: Install yq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yq
+
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
@@ -21,9 +26,17 @@ jobs:
           git fetch origin main
           git checkout main
 
+      - name: Extract Package Name from meta.yaml
+        run: |
+          PACKAGE_NAME=$(yq '.package.name' meta.yaml)
+          echo "Package name: $PACKAGE_NAME"
+          echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
+        shell: bash
+
       - name: Create Branch with Merge Sources
         run: |
-          MERGED_BRANCH="module/pr-${{ github.event.pull_request.number }}"
+          # MERGED_BRANCH="module/pr-${{ github.event.pull_request.number }}"
+          MERGED_BRANCH="module/${{ env.PACKAGE_NAME }}
           git checkout -b $MERGED_BRANCH
           echo "Branch created: $MERGED_BRANCH"
           git push --set-upstream origin $MERGED_BRANCH
@@ -43,7 +56,8 @@ jobs:
 
       - name: Comment on Pull Request
         run: |
-          MERGED_BRANCH="module/pr-${{ github.event.pull_request.number }}"
+          # MERGED_BRANCH="module/pr-${{ github.event.pull_request.number }}"
+          MERGED_BRANCH="module/${{ env.PACKAGE_NAME }}
           COMMENT="The pull request was merged. A new branch \`$MERGED_BRANCH\` has been created with the merge changes. The main branch has been reverted to before the merge."
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
