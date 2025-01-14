@@ -40,8 +40,7 @@ jobs:
           git push --set-upstream origin $MERGED_BRANCH
 
   revert_main:
-    # if: ${{ github.event.pull_request.merged == true }} # Ensure this runs only if the PR was merged
-    if: always() # Ensure this runs only if the PR was merged
+    if: always() # Always run this job, even if the previous job fails
     runs-on: ubuntu-24.04
     needs: [post_merge_revert] # Wait for the previous job to complete
     # continue-on-error: true # Continue even if the previous job fails
