@@ -11,24 +11,21 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Install yq
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y yq
-
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Fetch all branches and commit history
 
-      - name: Fetch Main Branch
-        run: |
-          git fetch origin main
-          git checkout main
+      - name: Install yq (alternative)
+        uses: mikefarah/yq-action@master
 
       - name: Extract Package Name from meta.yaml
         run: |
-          PACKAGE_NAME=$(yq -r '.package.name' meta.yaml)
+          PACKAGE_NAME=$(yq -r '.package.name' meta.yaml || echo "")
+          if [ -z "$PACKAGE_NAME" ]; then
+            echo "Error: Package name not found in meta.yaml" >&2
+            exit 1
+          fi
           echo "Package name: $PACKAGE_NAME"
           echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
         shell: bash
@@ -40,25 +37,32 @@ jobs:
           echo "Branch created: $MERGED_BRANCH"
           git push --set-upstream origin $MERGED_BRANCH
 
-      - name: Revert Main to Before Merge
+  revert_main:
+    if: ${{ github.event.pull_request.merged == true }} # Ensure this runs only if the PR was merged
+    runs-on: ubuntu-24.04
+    needs: post_merge_revert
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Revert Main Branch to Pre-Merge State
         run: |
           MERGE_COMMIT=$(git rev-parse HEAD)
-          PRE_MERGE_COMMIT=$(git rev-parse HEAD^1)
-          echo "Merge commit: $MERGE_COMMIT"
-          echo "Pre-merge commit: $PRE_MERGE_COMMIT"
-          git checkout main
-          git reset --hard $PRE_MERGE_COMMIT
-
-      - name: Push Reverted Main Branch
-        run: |
-          git push --force-with-lease origin main
+          git revert --no-commit $MERGE_COMMIT
+          git commit -m "Revert: Merge commit $MERGE_COMMIT"
+          git push origin main
 
       - name: Comment on Pull Request
-        run: |
-          MERGED_BRANCH="module/${{ env.PACKAGE_NAME }}"
-          COMMENT="The pull request was merged. A new branch \`$MERGED_BRANCH\` has been created with the merge changes. The main branch has been reverted to before the merge."
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"body\": \"$COMMENT\"}" \
-            "${{ github.event.pull_request.comments_url }}"
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const comment = `The pull request was merged. A new branch \`module/${process.env.PACKAGE_NAME}\` has been created with the merge changes. The main branch has been reverted to before the merge.`;
+            github.rest.issues.createComment({
+              issue_number: context.payload.pull_request.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
