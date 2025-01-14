@@ -53,8 +53,7 @@ jobs:
       - name: Revert Main Branch to Pre-Merge State
         run: |
           MERGE_COMMIT=$(git rev-parse HEAD)
-          git revert --no-commit $MERGE_COMMIT
-          git commit -m "Revert: Merge commit $MERGE_COMMIT"
+          git revert -m 1 $MERGE_COMMIT
           git push origin main
 
       - name: Comment on Pull Request
