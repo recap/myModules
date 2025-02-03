@@ -26,8 +26,6 @@ git commit -m "Removed submodule $SUBMODULE_PATH"
 rm -rf "$SUBMODULE_PATH"
 rm -rf ".git/modules/$SUBMODULE_PATH"
 
-git commit -am "Removed submodule $SUBMODULE_PATH"
-
 echo "Submodule $SUBMODULE_PATH removed successfully."
 
 
