@@ -1,3 +1,6 @@
 [submodule "modules/myJaspModule-module"]
 	path = modules/myJaspModule-module
 	url = https://github.com/jasp-escience/myJaspModule-module.git
+[submodule "beta-modules/myJaspYTemplate"]
+	path = beta-modules/myJaspYTemplate
+	url = https://github.com/recap/myJaspYTemplate.git
