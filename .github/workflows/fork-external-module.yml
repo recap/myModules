@@ -19,27 +19,12 @@ jobs:
                -H "Authorization: token $ORG_PAT" \
                -H "Accept: application/vnd.github.v3+json" \
                "https://api.github.com/repos/${{ github.event.inputs.repo }}/forks" \
-               -d '{"organization": "jasp-escience"}')
+               -d '{"organization": "jasp-escience", "default_branch_only":true}')
 
           if [ "$RESPONSE" -ne 202 ]; then
             echo "❌ Failed to fork repository. HTTP Status: $RESPONSE"
             cat response.json
             exit 1
+          else
+            echo "✅ Repository successfully forked into jasp-escience."
           fi
-
-      - name: Confirm Fork Exists
-        env:
-          ORG_PAT: ${{ secrets.ORG_PAT }}
-        run: |
-          FORKED_REPO="jasp-escience/${{ github.event.inputs.repo }}"
-          CHECK_RESPONSE=$(curl -s -o check.json -w "%{http_code}" -H "Authorization: token $ORG_PAT" \
-               -H "Accept: application/vnd.github.v3+json" \
-               "https://api.github.com/repos/$FORKED_REPO")
-
-          if [ "$CHECK_RESPONSE" -ne 200 ]; then
-            echo "❌ Fork verification failed! Repository $FORKED_REPO does not exist."
-            cat check.json
-            exit 1
-          fi
-
-          echo "✅ Repository $FORKED_REPO successfully forked and exists."
