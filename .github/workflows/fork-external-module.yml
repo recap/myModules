@@ -1,0 +1,28 @@
+name: Fork Repository into jasp-escience
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "Repository to fork (e.g., owner/repo)"
+        required: true
+
+jobs:
+  fork-repo:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Fork repository into jasp-escience
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -X POST -H "Authorization: token $GH_TOKEN" \
+               -H "Accept: application/vnd.github.v3+json" \
+               "https://api.github.com/repos/${{ github.event.inputs.repo }}/forks" \
+               -d '{"organization": "jasp-escience"}'
+
+      - name: Confirm Fork
+        run: |
+          echo "Repository forked into jasp-escience/${{ github.event.inputs.repo##*/ }}"
