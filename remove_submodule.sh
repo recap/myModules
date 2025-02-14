@@ -19,8 +19,10 @@ fi
 # Deinitialize the submodule
 git submodule deinit -f "$SUBMODULE_PATH"
 
+git rm --cached "$SUBMODULE_PATH"
+
 # Remove the submodule directory
-rm -rf "$SUBMODULE_PATH"
+rm -rf "$SUBMODULE_PATH" 2> /dev/null
 
 # Remove submodule from Git
 git rm -f "$SUBMODULE_PATH"
@@ -33,7 +35,14 @@ git config --file .gitmodules --remove-section "submodule.$SUBMODULE_PATH" 2>/de
 git config --remove-section "submodule.$SUBMODULE_PATH" 2>/dev/null
 
 # Remove the corresponding section from .gitmodules
-sed  -i "/\[submodule \"$ESCAPED_PATH\"\]/,/^\s*$/d" .gitmodules
+sed  -i "/\[submodule \"$ESCAPED_PATH\"\]/,/^\s*$/d" .gitmodules 2> /dev/null
+
+
+# Remove the submodule directory
+rm -rf ".git/modules/$SUBMODULE_PATH"
+
+# Remove submodule from Git
+git rm -f ".git/modules/$SUBMODULE_PATH"
 
 # Commit the changes
 git commit -am "Removed submodule $SUBMODULE_NAME"
