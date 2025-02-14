@@ -25,4 +25,4 @@ jobs:
 
       - name: Confirm Fork
         run: |
-          echo "Repository forked into jasp-escience/${{ github.event.inputs.repo##*/ }}"
+          echo "Repository forked into jasp-escience/${{ github.event.inputs.repo }}"
