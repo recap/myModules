@@ -18,7 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.ORG_PAT }} # needed to push later
+          persist-credentials: false
+          # token: ${{ secrets.ORG_PAT }} # needed to push later
 
       - name: Install yq
         run: |
