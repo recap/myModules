@@ -1,15 +1,14 @@
-name: Checks on open PR
+name: Manual Sync Modules
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 jobs:
-  check-meta-files:
+  sync-modules:
     runs-on: ubuntu-latest
     env:
-      # GH_TOKEN: ${{ secrets.ORG_PAT }}
-      ORG: jasp-escience # change this to your org
+      GH_TOKEN: ${{ secrets.ORG_PAT }}
+      ORG: jasp-escience
       BRANCH: main
 
     steps:
@@ -17,63 +16,69 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
-          # token: ${{ secrets.ORG_PAT }} # needed to push later
+          token: ${{ secrets.ORG_PAT }}
 
       - name: Install yq
         run: |
           sudo apt-get update
           sudo apt-get install -y yq
 
-      - name: Find newly added YAML files
-        run: |
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
-          echo $CHANGED_FILES > new_yaml_files.txt
-
-      - name: Fork and add submodules
+      - name: Process all YAML files and sync
         run: |
           mkdir -p beta-modules
-          while read file; do
+
+          for file in modules-metadata/*.yaml; do
+            if [ "$file" = "modules-metadata/exampleJaspModule.yaml" ]; then
+              echo "Skipping example module: $name"
+              continue
+            fi
             echo "Processing $file"
-            url=$(yq '.gitUrl' "$file")
             name=$(yq '.name' "$file")
-            echo "Found: name=$name, url=$url"
+            url=$(yq '.gitUrl' "$file")
+            echo "name=$name"
+            echo "gitUrl=$url"
 
-            # # Extract owner and repo
-            # repo_path=$(echo "$url" | sed -E 's|https://github.com/([^/]+/[^.]+)(\.git)?|\1|')
-            # owner=$(echo "$repo_path" | cut -d'/' -f1)
-            # repo=$(echo "$repo_path" | cut -d'/' -f2)
-            #
-            # # Fork into org
-            # echo "Forking $owner/$repo into $ORG"
-            # curl -s -X POST \
-            #   -H "Authorization: token $GH_TOKEN" \
-            #   -H "Accept: application/vnd.github+json" \
-            #   https://api.github.com/repos/$owner/$repo/forks \
-            #   -d "{\"organization\": \"${ORG}\"}"
-            #
-            # # Wait for fork to exist
-            # echo "Waiting for fork to become available..."
-            # for i in {1..10}; do
-            #   status=$(curl -s -o /dev/null -w "%{http_code}" \
-            #     -H "Authorization: token $GH_TOKEN" \
-            #     https://api.github.com/repos/${ORG}/${repo})
-            #   [ "$status" == "200" ] && break
-            #   sleep 3
-            # done
-            #
-            # # Add submodule pointing to new fork
-            # echo "Adding submodule beta-modules/$name"
-            # git submodule add https://github.com/${ORG}/${repo}.git beta-modules/$name
+            # Check if repo exists in jasp-escience org
+            echo "Checking if https://github.com/${ORG}/${name}.git exists..."
+            status=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "Authorization: token $GH_TOKEN" \
+              https://api.github.com/repos/${ORG}/${name})
 
-          done < new_yaml_files.txt
+            if [ "$status" == "200" ]; then
+              echo "Repo ${ORG}/${name} already exists. Skipping fork."
+            else
+              echo "Forking into ${ORG}/${name}..."
+              # Extract original owner/repo
+              repo_path=$(echo "$url" | sed -E 's|https://github.com/([^/]+/[^.]+)(\.git)?|\1|')
+              owner=$(echo "$repo_path" | cut -d'/' -f1)
+              repo=$(echo "$repo_path" | cut -d'/' -f2)
 
-      # - name: Commit and push submodules
-      #   run: |
-      #     git config user.name "github-actions"
-      #     git config user.email "github-actions@users.noreply.github.com"
-      #     git add beta-modules/
-      #     git commit -m "Add submodules for newly forked repos [skip ci]" || echo "No changes to commit"
-      #     git push origin $BRANCH
+              curl -s -X POST \
+                -H "Authorization: token $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                https://api.github.com/repos/$owner/$repo/forks \
+                -d "{\"organization\": \"${ORG}\"}"
+
+              echo "Waiting for fork to be ready..."
+              for i in {1..10}; do
+                status=$(curl -s -o /dev/null -w "%{http_code}" \
+                  -H "Authorization: token $GH_TOKEN" \
+                  https://api.github.com/repos/${ORG}/${repo})
+                [ "$status" == "200" ] && break
+                sleep 3
+              done
+            fi
+
+            # Add as submodule
+            echo "Adding submodule: beta-modules/$name"
+            git submodule add https://github.com/${ORG}/${name}.git beta-modules/$name || echo "Submodule already exists or failed"
+
+          done
+
+      - name: Commit and push submodules
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add beta-modules/
+          git commit -m "Sync submodules from modules-metadata [manual trigger]" || echo "No changes to commit"
+          git push origin $BRANCH
