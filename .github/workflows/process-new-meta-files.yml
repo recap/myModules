@@ -1,4 +1,4 @@
-name: Manual Sync Modules
+name: Fork and sync modules
 
 on:
   workflow_dispatch:
@@ -33,8 +33,8 @@ jobs:
               continue
             fi
             echo "Processing $file"
-            name=$(yq '.name' "$file")
-            url=$(yq '.gitUrl' "$file")
+            name=$(yq -r '.name' "$file")
+            url=$(yq -r '.gitUrl' "$file")
             echo "name=$name"
             echo "gitUrl=$url"
 
