@@ -1,0 +1,80 @@
+name: Fork & Add Submodule on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  fork-and-submodule:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.ORG_PAT }}
+      ORG: jasp-escience # change this to your org
+      BRANCH: main
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.ORG_PAT }} # needed to push later
+
+      - name: Install yq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yq
+
+      - name: Find newly added YAML files
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          git diff --name-status origin/${{ github.event.pull_request.base.ref }}...HEAD \
+            | awk '$1 == "A" && $2 ~ /^modules-metadata\/.*\.ya?ml$/ {print $2}' \
+            > new_yaml_files.txt
+          cat new_yaml_files.txt
+
+      - name: Fork and add submodules
+        run: |
+          mkdir -p beta-modules
+          while read file; do
+            echo "Processing $file"
+            url=$(yq '.gitUrl' "$file")
+            name=$(yq '.name' "$file")
+            echo "Found: name=$name, url=$url"
+
+            # Extract owner and repo
+            repo_path=$(echo "$url" | sed -E 's|https://github.com/([^/]+/[^.]+)(\.git)?|\1|')
+            owner=$(echo "$repo_path" | cut -d'/' -f1)
+            repo=$(echo "$repo_path" | cut -d'/' -f2)
+
+            # Fork into org
+            echo "Forking $owner/$repo into $ORG"
+            curl -s -X POST \
+              -H "Authorization: token $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/$owner/$repo/forks \
+              -d "{\"organization\": \"${ORG}\"}"
+
+            # Wait for fork to exist
+            echo "Waiting for fork to become available..."
+            for i in {1..10}; do
+              status=$(curl -s -o /dev/null -w "%{http_code}" \
+                -H "Authorization: token $GH_TOKEN" \
+                https://api.github.com/repos/${ORG}/${repo})
+              [ "$status" == "200" ] && break
+              sleep 3
+            done
+
+            # Add submodule pointing to new fork
+            echo "Adding submodule beta-modules/$name"
+            git submodule add https://github.com/${ORG}/${repo}.git beta-modules/$name
+
+          done < new_yaml_files.txt
+
+      - name: Commit and push submodules
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add beta-modules/
+          git commit -m "Add submodules for newly forked repos [skip ci]" || echo "No changes to commit"
+          git push origin $BRANCH
