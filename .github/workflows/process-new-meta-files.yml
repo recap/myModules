@@ -46,36 +46,36 @@ jobs:
             echo "name=$name"
             echo "gitUrl=$url"
 
-            # Check if repo exists in jasp-escience org
-            echo "Checking if https://github.com/${ORG}/${name}.git exists..."
-            status=$(curl -s -o /dev/null -w "%{http_code}" \
-              -H "Authorization: token $GH_TOKEN" \
-              https://api.github.com/repos/${ORG}/${name})
-
-            if [ "$status" == "200" ]; then
-              echo "Repo ${ORG}/${name} already exists. Skipping fork."
-            else
-              echo "Forking into ${ORG}/${name}..."
-              # Extract original owner/repo
-              repo_path=$(echo "$url" | sed -E 's|https://github.com/([^/]+/[^.]+)(\.git)?|\1|')
-              owner=$(echo "$repo_path" | cut -d'/' -f1)
-              repo=$(echo "$repo_path" | cut -d'/' -f2)
-
-              curl -s -X POST \
-                -H "Authorization: token $GH_TOKEN" \
-                -H "Accept: application/vnd.github+json" \
-                https://api.github.com/repos/$owner/$repo/forks \
-                -d "{\"organization\": \"${ORG}\"}"
-
-              echo "Waiting for fork to be ready..."
-              for i in {1..10}; do
-                status=$(curl -s -o /dev/null -w "%{http_code}" \
-                  -H "Authorization: token $GH_TOKEN" \
-                  https://api.github.com/repos/${ORG}/${repo})
-                [ "$status" == "200" ] && break
-                sleep 3
-              done
-            fi
+            # # Check if repo exists in jasp-escience org
+            # echo "Checking if https://github.com/${ORG}/${name}.git exists..."
+            # status=$(curl -s -o /dev/null -w "%{http_code}" \
+            #   -H "Authorization: token $GH_TOKEN" \
+            #   https://api.github.com/repos/${ORG}/${name})
+            #
+            # if [ "$status" == "200" ]; then
+            #   echo "Repo ${ORG}/${name} already exists. Skipping fork."
+            # else
+            #   echo "Forking into ${ORG}/${name}..."
+            #   # Extract original owner/repo
+            #   repo_path=$(echo "$url" | sed -E 's|https://github.com/([^/]+/[^.]+)(\.git)?|\1|')
+            #   owner=$(echo "$repo_path" | cut -d'/' -f1)
+            #   repo=$(echo "$repo_path" | cut -d'/' -f2)
+            #
+            #   curl -s -X POST \
+            #     -H "Authorization: token $GH_TOKEN" \
+            #     -H "Accept: application/vnd.github+json" \
+            #     https://api.github.com/repos/$owner/$repo/forks \
+            #     -d "{\"organization\": \"${ORG}\"}"
+            #
+            #   echo "Waiting for fork to be ready..."
+            #   for i in {1..10}; do
+            #     status=$(curl -s -o /dev/null -w "%{http_code}" \
+            #       -H "Authorization: token $GH_TOKEN" \
+            #       https://api.github.com/repos/${ORG}/${repo})
+            #     [ "$status" == "200" ] && break
+            #     sleep 3
+            #   done
+            # fi
 
             # Add as submodule
             echo "Adding submodule: beta-modules/$name"
