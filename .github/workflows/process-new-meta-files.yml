@@ -1,12 +1,11 @@
-name: Fork & Add Submodule on PR Merge
+name: Checks on open PR
 
 on:
   pull_request:
-    types: [closed]
+    types: [opened, synchronize, reopened]
 
 jobs:
-  fork-and-submodule:
-    if: github.event.pull_request.merged == true
+  check-meta-files:
     runs-on: ubuntu-latest
     env:
       # GH_TOKEN: ${{ secrets.ORG_PAT }}
@@ -31,12 +30,7 @@ jobs:
           CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
           echo "Changed files:"
           echo "$CHANGED_FILES"
-          cat $CHANGED_FILES > new_yaml_files.txt
-          # git fetch origin ${{ github.event.pull_request.base.ref }}
-          # git diff --name-status origin/${{ github.event.pull_request.base.ref }}...HEAD \
-          #   | awk '$1 == "A" && $2 ~ /^modules-metadata\/.*\.ya?ml$/ {print $2}' \
-          #   > new_yaml_files.txt
-          # cat new_yaml_files.txt
+          echo $CHANGED_FILES > new_yaml_files.txt
 
       - name: Fork and add submodules
         run: |
