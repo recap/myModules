@@ -89,6 +89,12 @@ jobs:
         run: |
           # git config user.name "github-actions"
           # git config user.email "github-actions@users.noreply.github.com"
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+
+          # Use GH_TOKEN for pushing
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+
           git add beta-modules/
           git commit -m "Sync submodules from modules-metadata [manual trigger]" || echo "No changes to commit"
           git push origin $BRANCH
