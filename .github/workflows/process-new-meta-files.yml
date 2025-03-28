@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ GH_TOKEN }}
+          token: ${GH_TOKEN}
 
       - name: Configure Git for authenticated push
         run: |
