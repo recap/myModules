@@ -25,40 +25,62 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y yq
 
-      - name: Get list of changed files
+      - name: Read new meta files
         id: changed-files
         uses: jitterbit/get-changed-files@v1
-
-      - name: Filter for newly added YAMLs in modules-metadata/
-        id: new-yaml-files
         run: |
-          echo "Filtering added YAML files in modules-metadata/"
-          echo "" > new_yaml_files.txt
-
-          for file in ${{ steps.changed-files.outputs.added }}; do
-            if [[ "$file" == modules-metadata/*.yml || "$file" == modules-metadata/*.yaml ]]; then
-              echo "$file" >> new_yaml_files.txt
-            fi
-          done
-
-          echo "New YAML files:"
-          cat new_yaml_files.txt
-
-      - name: Parse YAML files
-        run: |
-          mkdir -p beta-modules
-          while read file; do
+          echo "Changed files:"
+          echo "${{ steps.changed-files.outputs.added }}"
+          echo "${{ steps.changed-files.outputs.modified }}"
+          echo "${{ steps.changed-files.outputs.deleted }}"
+          echo "${{ steps.changed-files.outputs.renamed }}"
+          echo "${{ steps.changed-files.outputs.type}}"
+          echo "${{ steps.changed-files.outputs.total}}"
+          for file in ${{ steps.files.outputs.added }}; do
+            echo "Do something with this ${file}."
             if [ "$file" = "modules-metadata/exampleJaspModule.yaml" ]; then
               echo "Skipping example module: $name"
               continue
             fi
             echo "Processing $file"
-            url=$(yq '.gitUrl' "$file")
-            name=$(yq '.name' "$file")
+            url=$(yq -r '.gitUrl' "$file")
+            name=$(yq -r '.name' "$file")
             echo "Found: name=$name, url=$url"
             # Do other checks here
             # Check if remote repo exists
             # Check if it is a valid JASP module
             # etc. 
 
-          done < new_yaml_files.txt
+          done
+
+      # - name: Filter for newly added YAMLs in modules-metadata/
+      #   id: new-yaml-files
+      #   run: |
+      #     echo "Filtering added YAML files in modules-metadata/"
+      #
+      #     for file in ${{ steps.changed-files.outputs.added }}; do
+      #       if [[ "$file" == modules-metadata/*.yml || "$file" == modules-metadata/*.yaml ]]; then
+      #         echo "$file" >> new_yaml_files.txt
+      #       fi
+      #     done
+      #
+      #     echo "New YAML files:"
+      #     cat new_yaml_files.txt
+      #
+      # - name: Parse YAML files
+      #   run: |
+      #     while read file; do
+      #       if [ "$file" = "modules-metadata/exampleJaspModule.yaml" ]; then
+      #         echo "Skipping example module: $name"
+      #         continue
+      #       fi
+      #       echo "Processing $file"
+      #       url=$(yq -r '.gitUrl' "$file")
+      #       name=$(yq -r '.name' "$file")
+      #       echo "Found: name=$name, url=$url"
+      #       # Do other checks here
+      #       # Check if remote repo exists
+      #       # Check if it is a valid JASP module
+      #       # etc.
+      #
+      #     done < new_yaml_files.txt
