@@ -3,8 +3,13 @@ name: Process new meta files and fork modules
 on:
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   sync-modules:
+    permissions:
+      contents: write
+      actions: read
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.ORG_PAT }}
@@ -15,6 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          persist-credentials: false
           fetch-depth: 0
           token: ${{ secrets.ORG_PAT }}
 
@@ -53,36 +59,31 @@ jobs:
               echo "Repo ${ORG}/${name} already exists. Skipping fork."
               continue
             fi
+
             echo "Forking into ${ORG}/${name}..."
-              # Extract original owner/repo
-            #   repo_path=$(echo "$url" | sed -E 's|https://github.com/([^/]+/[^.]+)(\.git)?|\1|')
-            #   owner=$(echo "$repo_path" | cut -d'/' -f1)
-            #   repo=$(echo "$repo_path" | cut -d'/' -f2)
-            #
-            #   curl -s -X POST \
-            #     -H "Authorization: token $GH_TOKEN" \
-            #     -H "Accept: application/vnd.github+json" \
-            #     https://api.github.com/repos/$owner/$repo/forks \
-            #     -d "{\"organization\": \"${ORG}\"}"
-            #
-            #   echo "Waiting for fork to be ready..."
-            #   for i in {1..10}; do
-            #     status=$(curl -s -o /dev/null -w "%{http_code}" \
-            #       -H "Authorization: token $GH_TOKEN" \
-            #       https://api.github.com/repos/${ORG}/${repo})
-            #     [ "$status" == "200" ] && break
-            #     sleep 3
-            #   done
-            # fi
-            #
-            # # Add as submodule
-            # echo "Adding submodule: beta-modules/$name"
-            # git submodule add https://github.com/${ORG}/${name}.git beta-modules/$name || echo "Submodule already exists or failed"
-            # # git submodule add https://${GH_TOKEN}@github.com/${ORG}/${name}.git beta-modules/$name
-            # # git remote -v
-            # git add beta-modules/${name}
-            # git commit -m "Added ${name} as a submodule under beta-modules/"
-            # git push origin main
+            # Extract original owner/repo
+            repo_path=$(echo "$url" | sed -E 's|https://github.com/([^/]+/[^.]+)(\.git)?|\1|')
+            owner=$(echo "$repo_path" | cut -d'/' -f1)
+            repo=$(echo "$repo_path" | cut -d'/' -f2)
 
+            curl -s -X POST \
+              -H "Authorization: token $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/$owner/$repo/forks \
+              -d "{\"organization\": \"${ORG}\"}"
 
+            echo "Waiting for fork to be ready..."
+            for i in {1..10}; do
+              status=$(curl -s -o /dev/null -w "%{http_code}" \
+                -H "Authorization: token $GH_TOKEN" \
+                https://api.github.com/repos/${ORG}/${repo})
+              [ "$status" == "200" ] && break
+              sleep 10
+            done
+            # Add as submodule
+            echo "Adding submodule: beta-modules/$name"
+            git submodule add https://github.com/${ORG}/${name}.git beta-modules/$name || echo "Submodule already exists or failed"
+            git add beta-modules/${name}
+            git commit -m "Added ${name} as a submodule under beta-modules/"
+            git push origin main
           done

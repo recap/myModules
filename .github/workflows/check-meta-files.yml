@@ -4,11 +4,12 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions: {}
+
 jobs:
   check-meta-files:
     runs-on: ubuntu-latest
     env:
-      # GH_TOKEN: ${{ secrets.ORG_PAT }}
       ORG: jasp-escience # change this to your org
       BRANCH: main
 
@@ -18,24 +19,39 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-          # token: ${{ secrets.ORG_PAT }} # needed to push later
 
       - name: Install yq
         run: |
           sudo apt-get update
           sudo apt-get install -y yq
 
-      - name: Find newly added YAML files
+      - name: Get list of changed files
+        id: changed-files
+        uses: jitterbit/get-changed-files@v1
+
+      - name: Filter for newly added YAMLs in modules-metadata/
+        id: new-yaml-files
         run: |
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
-          echo $CHANGED_FILES > new_yaml_files.txt
+          echo "Filtering added YAML files in modules-metadata/"
+          echo "" > new_yaml_files.txt
+
+          for file in ${{ steps.changed-files.outputs.added }}; do
+            if [[ "$file" == modules-metadata/*.yml || "$file" == modules-metadata/*.yaml ]]; then
+              echo "$file" >> new_yaml_files.txt
+            fi
+          done
+
+          echo "New YAML files:"
+          cat new_yaml_files.txt
 
       - name: Parse YAML files
         run: |
           mkdir -p beta-modules
           while read file; do
+            if [ "$file" = "modules-metadata/exampleJaspModule.yaml" ]; then
+              echo "Skipping example module: $name"
+              continue
+            fi
             echo "Processing $file"
             url=$(yq '.gitUrl' "$file")
             name=$(yq '.name' "$file")
