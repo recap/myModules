@@ -51,8 +51,9 @@ jobs:
 
             if [ "$status" == "200" ]; then
               echo "Repo ${ORG}/${name} already exists. Skipping fork."
-            else
-              echo "Forking into ${ORG}/${name}..."
+              continue
+            fi
+            echo "Forking into ${ORG}/${name}..."
               # Extract original owner/repo
             #   repo_path=$(echo "$url" | sed -E 's|https://github.com/([^/]+/[^.]+)(\.git)?|\1|')
             #   owner=$(echo "$repo_path" | cut -d'/' -f1)
