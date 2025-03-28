@@ -20,7 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          # persist-credentials: false
           fetch-depth: 0
           token: ${{ secrets.ORG_PAT }}
 
@@ -80,6 +80,7 @@ jobs:
               [ "$status" == "200" ] && break
               sleep 10
             done
+            sleep 5
             # Add as submodule
             echo "Adding submodule: beta-modules/$name"
             git submodule add https://github.com/${ORG}/${name}.git beta-modules/$name || echo "Submodule already exists or failed"
