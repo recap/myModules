@@ -28,15 +28,19 @@ jobs:
       - name: Read new meta files
         id: changed-files
         uses: jitterbit/get-changed-files@v1
+        with:
+          file_pattern: "modules-metadata/*.yaml"
+
+      - name: Process files
         run: |
-          echo "Changed files:"
-          echo "${{ steps.changed-files.outputs.added }}"
-          echo "${{ steps.changed-files.outputs.modified }}"
-          echo "${{ steps.changed-files.outputs.deleted }}"
-          echo "${{ steps.changed-files.outputs.renamed }}"
-          echo "${{ steps.changed-files.outputs.type}}"
-          echo "${{ steps.changed-files.outputs.total}}"
-          for file in ${{ steps.files.outputs.added }}; do
+          # echo "Changed files:"
+          # echo "${{ steps.changed-files.outputs.added }}"
+          # echo "${{ steps.changed-files.outputs.modified }}"
+          # echo "${{ steps.changed-files.outputs.deleted }}"
+          # echo "${{ steps.changed-files.outputs.renamed }}"
+          # echo "${{ steps.changed-files.outputs.type}}"
+          # echo "${{ steps.changed-files.outputs.total}}"
+          for file in ${{ steps.changed-files.outputs.added }}; do
             echo "Do something with this ${file}."
             if [ "$file" = "modules-metadata/exampleJaspModule.yaml" ]; then
               echo "Skipping example module: $name"
