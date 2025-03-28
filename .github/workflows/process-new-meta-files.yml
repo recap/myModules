@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.ORG_PAT }}
+          token: ${{ GH_TOKEN }}
 
       - name: Configure Git for authenticated push
         run: |
@@ -24,7 +24,8 @@ jobs:
           git config user.email "github-actions@users.noreply.github.com"
 
           # Use GH_TOKEN for pushing
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          # git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/jasp-escience/modules.git
 
       - name: Install yq
         run: |
@@ -93,8 +94,10 @@ jobs:
           git config user.email "github-actions@users.noreply.github.com"
 
           # Use GH_TOKEN for pushing
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          # git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/jasp-escience/modules.git
 
           git add beta-modules/
+          find ./
           git commit -m "Sync submodules from modules-metadata [manual trigger]" || echo "No changes to commit"
           git push origin $BRANCH
