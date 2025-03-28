@@ -1,4 +1,4 @@
-name: Fork and sync modules
+name: Process new meta files and fork modules
 
 on:
   workflow_dispatch:
@@ -23,17 +23,12 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
 
-          # Use GH_TOKEN for pushing
-          # git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-          # git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/jasp-escience/modules.git
-          # git remote -v
-
       - name: Install yq
         run: |
           sudo apt-get update
           sudo apt-get install -y yq
 
-      - name: Process all YAML files and sync
+      - name: Fork and add submodules
         run: |
           mkdir -p beta-modules
 
@@ -48,17 +43,17 @@ jobs:
             echo "name=$name"
             echo "gitUrl=$url"
 
-            # # Check if repo exists in jasp-escience org
-            # echo "Checking if https://github.com/${ORG}/${name}.git exists..."
-            # status=$(curl -s -o /dev/null -w "%{http_code}" \
-            #   -H "Authorization: token $GH_TOKEN" \
-            #   https://api.github.com/repos/${ORG}/${name})
-            #
-            # if [ "$status" == "200" ]; then
-            #   echo "Repo ${ORG}/${name} already exists. Skipping fork."
-            # else
-            #   echo "Forking into ${ORG}/${name}..."
-            #   # Extract original owner/repo
+            # Check if repo exists in jasp-escience org
+            echo "Checking if https://github.com/${ORG}/${name}.git exists..."
+            status=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "Authorization: token $GH_TOKEN" \
+              https://api.github.com/repos/${ORG}/${name})
+
+            if [ "$status" == "200" ]; then
+              echo "Repo ${ORG}/${name} already exists. Skipping fork."
+            else
+              echo "Forking into ${ORG}/${name}..."
+              # Extract original owner/repo
             #   repo_path=$(echo "$url" | sed -E 's|https://github.com/([^/]+/[^.]+)(\.git)?|\1|')
             #   owner=$(echo "$repo_path" | cut -d'/' -f1)
             #   repo=$(echo "$repo_path" | cut -d'/' -f2)
@@ -78,31 +73,15 @@ jobs:
             #     sleep 3
             #   done
             # fi
-
-            # Add as submodule
-            echo "Adding submodule: beta-modules/$name"
-            git submodule add https://github.com/${ORG}/${name}.git beta-modules/$name || echo "Submodule already exists or failed"
-            # git submodule add https://${GH_TOKEN}@github.com/${ORG}/${name}.git beta-modules/$name
-            # git remote -v
-            git add beta-modules/${name}
-            git commit -m "Added ${name} as a submodule under beta-modules/"
-            git push origin main
+            #
+            # # Add as submodule
+            # echo "Adding submodule: beta-modules/$name"
+            # git submodule add https://github.com/${ORG}/${name}.git beta-modules/$name || echo "Submodule already exists or failed"
+            # # git submodule add https://${GH_TOKEN}@github.com/${ORG}/${name}.git beta-modules/$name
+            # # git remote -v
+            # git add beta-modules/${name}
+            # git commit -m "Added ${name} as a submodule under beta-modules/"
+            # git push origin main
 
 
           done
-
-      # - name: Commit and push submodules
-      #   run: |
-      # # git config user.name "github-actions"
-      # # git config user.email "github-actions@users.noreply.github.com"
-      # git config user.name "github-actions"
-      # git config user.email "github-actions@users.noreply.github.com"
-      #
-      # # Use GH_TOKEN for pushing
-      # # git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-      # git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/jasp-escience/modules.git
-      #
-      # git add beta-modules/
-      # find ./
-      # git commit -m "Sync submodules from modules-metadata [manual trigger]" || echo "No changes to commit"
-      # git push origin $BRANCH
