@@ -28,20 +28,15 @@ jobs:
       - name: Read new meta files
         id: changed-files
         uses: masesgroup/retrieve-changed-files@v3
-        with:
-          file_pattern: "modules-metadata/*.yaml"
 
       - name: Process files
         run: |
-          # echo "Changed files:"
-          # echo "${{ steps.changed-files.outputs.added }}"
-          # echo "${{ steps.changed-files.outputs.modified }}"
-          # echo "${{ steps.changed-files.outputs.deleted }}"
-          # echo "${{ steps.changed-files.outputs.renamed }}"
-          # echo "${{ steps.changed-files.outputs.type}}"
-          # echo "${{ steps.changed-files.outputs.total}}"
           for file in ${{ steps.changed-files.outputs.added }}; do
-            echo "Do something with this ${file}."
+            # Skip anything not matching the pattern
+            if [[ ! "$file" =~ ^modules-metadata/.*\.ya?ml$ ]]; then
+              echo "Skipping file that does not match pattern: $file"
+              continue
+            fi
             if [ "$file" = "modules-metadata/exampleJaspModule.yaml" ]; then
               echo "Skipping example module: $name"
               continue
@@ -56,35 +51,3 @@ jobs:
             # etc. 
 
           done
-
-      # - name: Filter for newly added YAMLs in modules-metadata/
-      #   id: new-yaml-files
-      #   run: |
-      #     echo "Filtering added YAML files in modules-metadata/"
-      #
-      #     for file in ${{ steps.changed-files.outputs.added }}; do
-      #       if [[ "$file" == modules-metadata/*.yml || "$file" == modules-metadata/*.yaml ]]; then
-      #         echo "$file" >> new_yaml_files.txt
-      #       fi
-      #     done
-      #
-      #     echo "New YAML files:"
-      #     cat new_yaml_files.txt
-      #
-      # - name: Parse YAML files
-      #   run: |
-      #     while read file; do
-      #       if [ "$file" = "modules-metadata/exampleJaspModule.yaml" ]; then
-      #         echo "Skipping example module: $name"
-      #         continue
-      #       fi
-      #       echo "Processing $file"
-      #       url=$(yq -r '.gitUrl' "$file")
-      #       name=$(yq -r '.name' "$file")
-      #       echo "Found: name=$name, url=$url"
-      #       # Do other checks here
-      #       # Check if remote repo exists
-      #       # Check if it is a valid JASP module
-      #       # etc.
-      #
-      #     done < new_yaml_files.txt
