@@ -25,8 +25,8 @@ jobs:
 
           # Use GH_TOKEN for pushing
           # git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/jasp-escience/modules.git
-          git remote -v
+          # git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/jasp-escience/modules.git
+          # git remote -v
 
       - name: Install yq
         run: |
@@ -81,9 +81,9 @@ jobs:
 
             # Add as submodule
             echo "Adding submodule: beta-modules/$name"
-            # git submodule add https://github.com/${ORG}/${name}.git beta-modules/$name || echo "Submodule already exists or failed"
-            git submodule add https://${GH_TOKEN}@github.com/${ORG}/${name}.git beta-modules/$name
-            git remote -v
+            git submodule add https://github.com/${ORG}/${name}.git beta-modules/$name || echo "Submodule already exists or failed"
+            # git submodule add https://${GH_TOKEN}@github.com/${ORG}/${name}.git beta-modules/$name
+            # git remote -v
             git add beta-modules/${name}
             git commit -m "Added ${name} as a submodule under beta-modules/"
             git push origin main
