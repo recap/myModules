@@ -26,6 +26,7 @@ jobs:
           # Use GH_TOKEN for pushing
           # git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/jasp-escience/modules.git
+          git remote -v
 
       - name: Install yq
         run: |
@@ -82,22 +83,26 @@ jobs:
             echo "Adding submodule: beta-modules/$name"
             # git submodule add https://github.com/${ORG}/${name}.git beta-modules/$name || echo "Submodule already exists or failed"
             git submodule add https://${GH_TOKEN}@github.com/${ORG}/${name}.git beta-modules/$name
+            git remote -v
+            git add .gitmodules beta-modules/${name}
+            git commit -m "Added ${name} as a submodule under modules/"
+            git push origin main
 
 
           done
 
-      - name: Commit and push submodules
-        run: |
-          # git config user.name "github-actions"
-          # git config user.email "github-actions@users.noreply.github.com"
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-
-          # Use GH_TOKEN for pushing
-          # git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/jasp-escience/modules.git
-
-          git add beta-modules/
-          find ./
-          git commit -m "Sync submodules from modules-metadata [manual trigger]" || echo "No changes to commit"
-          git push origin $BRANCH
+      # - name: Commit and push submodules
+      #   run: |
+      # # git config user.name "github-actions"
+      # # git config user.email "github-actions@users.noreply.github.com"
+      # git config user.name "github-actions"
+      # git config user.email "github-actions@users.noreply.github.com"
+      #
+      # # Use GH_TOKEN for pushing
+      # # git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+      # git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/jasp-escience/modules.git
+      #
+      # git add beta-modules/
+      # find ./
+      # git commit -m "Sync submodules from modules-metadata [manual trigger]" || echo "No changes to commit"
+      # git push origin $BRANCH
