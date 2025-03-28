@@ -27,6 +27,9 @@ rm -rf "$SUBMODULE_PATH" 2> /dev/null
 # Remove submodule from Git
 git rm -f "$SUBMODULE_PATH"
 
+# Remove meta files
+git rm -f modules-metadata/"$SUBMODULE_NAME".yaml
+
 # Escape special characters in SUBMODULE_PATH for use in config commands
 ESCAPED_PATH=$(printf '%s\n' "$SUBMODULE_PATH" | sed 's/[\/&]/\\&/g')
 
