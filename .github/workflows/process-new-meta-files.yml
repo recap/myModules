@@ -84,8 +84,8 @@ jobs:
             # git submodule add https://github.com/${ORG}/${name}.git beta-modules/$name || echo "Submodule already exists or failed"
             git submodule add https://${GH_TOKEN}@github.com/${ORG}/${name}.git beta-modules/$name
             git remote -v
-            git add .gitmodules beta-modules/${name}
-            git commit -m "Added ${name} as a submodule under modules/"
+            git add beta-modules/${name}
+            git commit -m "Added ${name} as a submodule under beta-modules/"
             git push origin main
 
 
