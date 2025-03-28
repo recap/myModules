@@ -27,7 +27,7 @@ jobs:
 
       - name: Read new meta files
         id: changed-files
-        uses: jitterbit/get-changed-files@v1
+        uses: masesgroup/retrieve-changed-files@v3
         with:
           file_pattern: "modules-metadata/*.yaml"
 
