@@ -54,6 +54,8 @@ jobs:
             if [ "$status" == "200" ]; then
               echo "Repo ${ORG}/${name} already exists!!!"
               exit 1
+            else
+              echo "$status"
             fi
             # Check if it is a valid JASP module
             # etc. 
