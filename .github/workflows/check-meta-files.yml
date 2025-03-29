@@ -46,7 +46,15 @@ jobs:
             name=$(yq -r '.name' "$file")
             echo "Found: name=$name, url=$url"
             # Do other checks here
-            # Check if remote repo exists
+            # Check if repo exists in jasp-escience org
+            echo "Checking if https://github.com/${ORG}/${name}.git exists..."
+            status=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              https://api.github.com/repos/${ORG}/${name})
+            if [ "$status" == "200" ]; then
+              echo "Repo ${ORG}/${name} already exists!!!"
+              exit 1
+            fi
             # Check if it is a valid JASP module
             # etc. 
 
